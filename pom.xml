@@ -102,6 +102,7 @@
 		<module>maven-projects/execute-commands</module>
 		<module>maven-projects/ij2-image-plus</module>
 		<module>maven-projects/listen-to-events</module>
+		<module>maven-projects/measure</module>
 		<module>maven-projects/simple-commands</module>
 		<module>maven-projects/swing-example</module>
 		<module>maven-projects/working-with-modules</module>
@@ -132,6 +133,10 @@
 		<repository>
 			<id>scijava.public</id>
 			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+		<repository>
+			<id>imagej-releases</id>
+			<url>http://maven.imagej.net/content/repositories/releases/</url>
 		</repository>
 	</repositories>
 </project>
