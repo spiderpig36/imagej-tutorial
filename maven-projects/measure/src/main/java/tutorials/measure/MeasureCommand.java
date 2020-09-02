@@ -7,6 +7,8 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 @Plugin(type = Command.class, headless = true,
         menuPath = "Analyze>Batch Measure")
@@ -33,7 +35,17 @@ public class MeasureCommand implements Command {
             // Sort and randomise logic
         }
 
-        measureService.setOutputFile(new File(imageFolder.getPath() + "/measurements.csv"));
+        File outputFile = new File(imageFolder.getPath() + "/measurements.csv");
+        try {
+            if (!outputFile.createNewFile()) {
+                FileWriter writer = new FileWriter(outputFile, false);
+                writer.write("");
+                writer.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        measureService.setOutputFile(outputFile);
         measureService.nextImage();
     }
 

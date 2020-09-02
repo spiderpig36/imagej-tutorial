@@ -1,12 +1,10 @@
 package tutorials.measure;
 
 import io.scif.services.DatasetIOService;
-import net.imagej.DatasetService;
 import net.imagej.ImageJService;
 import net.imagej.display.OverlayView;
 import net.imagej.overlay.LineOverlay;
 import net.imglib2.img.Img;
-import org.scijava.command.CommandService;
 import org.scijava.display.Display;
 import org.scijava.display.DisplayService;
 import org.scijava.display.event.input.KyEvent;
@@ -24,9 +22,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Plugin(type = Service.class)
 public class MeasureService extends AbstractService implements ImageJService {
@@ -45,7 +41,7 @@ public class MeasureService extends AbstractService implements ImageJService {
     private int currentFileIndex;
     private Img currentImg;
 
-    private Map<String, List<Double>> results;
+    private List<Double> measurements;
 
     // pixel per 1mm
     private int scale;
@@ -57,7 +53,6 @@ public class MeasureService extends AbstractService implements ImageJService {
     @Override
     public void initialize() {
         this.files = new ArrayList<>();
-        this.results = new HashMap<>();
     }
 
     @EventHandler
@@ -74,9 +69,8 @@ public class MeasureService extends AbstractService implements ImageJService {
 
     private void measure() {
         Display<?> display = displayService.getActiveDisplay();
-        ArrayList<Double> measurements = new ArrayList<>();
-        results.put(currentFile().getName(), measurements);
         if (display.toString().equals(currentFile().getName())) {
+            measurements = new ArrayList<>();
             for (Object o : display) {
                 if (o instanceof OverlayView) {
                     OverlayView view = (OverlayView) o;
@@ -93,21 +87,22 @@ public class MeasureService extends AbstractService implements ImageJService {
     public void onWindowClosedEvent(final WinClosedEvent evt) {
         Display<?> display = evt.getDisplay();
         if (display.toString().equals(currentFile().getName())) {
-            saveResults();
+            saveMeasurements();
             nextImage();
         }
     }
 
-    private void saveResults() {
+    private void saveMeasurements() {
         try {
-            FileWriter writer = new FileWriter(this.outputFile);
-            for (Map.Entry<String, List<Double>> entry : this.results.entrySet()) {
-                StringBuilder line = new StringBuilder(entry.getKey());
-                for (Double measurement : entry.getValue()) {
-                    line.append(",").append(measurement);
-                }
-                writer.append(line.toString());
+            FileWriter writer = new FileWriter(this.outputFile, true);
+
+            StringBuilder line = new StringBuilder(currentFile().getName());
+            for (Double measurement : this.measurements) {
+                line.append(",").append(measurement);
             }
+            line.append("\n");
+            writer.write(line.toString());
+
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -139,7 +134,6 @@ public class MeasureService extends AbstractService implements ImageJService {
     public void endMeasureBatch() {
         this.measureBatchRunning = false;
         this.files = new ArrayList<>();
-        this.results = new HashMap<>();
     }
 
     public void addFile(File file) {
