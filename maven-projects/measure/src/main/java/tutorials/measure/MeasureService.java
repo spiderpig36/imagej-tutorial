@@ -2,8 +2,10 @@ package tutorials.measure;
 
 import io.scif.services.DatasetIOService;
 import net.imagej.ImageJService;
+import net.imagej.display.DataView;
 import net.imagej.display.OverlayView;
 import net.imagej.overlay.LineOverlay;
+import net.imagej.overlay.Overlay;
 import net.imglib2.img.Img;
 import org.scijava.display.Display;
 import org.scijava.display.DisplayService;
@@ -23,6 +25,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Plugin(type = Service.class)
 public class MeasureService extends AbstractService implements ImageJService {
@@ -39,7 +42,6 @@ public class MeasureService extends AbstractService implements ImageJService {
     private List<File> files;
     private File outputFile;
     private int currentFileIndex;
-    private Img currentImg;
 
     private List<Double> measurements;
 
@@ -68,12 +70,13 @@ public class MeasureService extends AbstractService implements ImageJService {
     }
 
     private void measure() {
-        Display<?> display = displayService.getActiveDisplay();
-        if (display.toString().equals(currentFile().getName())) {
+        Display<DataView> activeDisplay = (Display<DataView>) displayService.getActiveDisplay();
+        if (activeDisplay.toString().equals(this.currentName())) {
             measurements = new ArrayList<>();
-            for (Object o : display) {
-                if (o instanceof OverlayView) {
-                    OverlayView view = (OverlayView) o;
+            List<DataView> distinctViews = activeDisplay.stream().distinct().collect(Collectors.toList());
+            for (DataView v : distinctViews) {
+                if (v instanceof OverlayView) {
+                    OverlayView view = (OverlayView) v;
                     if (view.getData() instanceof LineOverlay) {
                         LineOverlay line = (LineOverlay) view.getData();
                         measurements.add(calculateLineLength(line));
@@ -86,7 +89,7 @@ public class MeasureService extends AbstractService implements ImageJService {
     @EventHandler
     public void onWindowClosedEvent(final WinClosedEvent evt) {
         Display<?> display = evt.getDisplay();
-        if (display.toString().equals(currentFile().getName())) {
+        if (display.toString().equals(this.currentName())) {
             saveMeasurements();
             nextImage();
         }
@@ -96,7 +99,7 @@ public class MeasureService extends AbstractService implements ImageJService {
         try {
             FileWriter writer = new FileWriter(this.outputFile, true);
 
-            StringBuilder line = new StringBuilder(currentFile().getName());
+            StringBuilder line = new StringBuilder(this.currentName());
             for (Double measurement : this.measurements) {
                 line.append(",").append(measurement);
             }
@@ -128,7 +131,6 @@ public class MeasureService extends AbstractService implements ImageJService {
     public void startMeasureBatch() {
         this.currentFileIndex = -1;
         this.measureBatchRunning = true;
-        System.out.println("run Forest, run!");
     }
 
     public void endMeasureBatch() {
@@ -147,6 +149,10 @@ public class MeasureService extends AbstractService implements ImageJService {
         return this.files.get(this.currentFileIndex);
     }
 
+    public String currentName() {
+        return this.currentFile().getName();
+    }
+
     public void nextImage() {
         this.currentFileIndex++;
         if (currentFileIndex > this.files.size() - 1) {
@@ -154,8 +160,8 @@ public class MeasureService extends AbstractService implements ImageJService {
             return;
         }
         try {
-            this.currentImg = ioService.open(currentFile().getAbsolutePath());
-            uiService.show(this.currentImg);
+            Img currentImg = ioService.open(currentFile().getAbsolutePath());
+            uiService.show(currentImg);
         } catch (IOException e) {
             e.printStackTrace();
         }
