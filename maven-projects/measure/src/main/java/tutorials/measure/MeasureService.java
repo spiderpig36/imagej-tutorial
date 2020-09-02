@@ -12,6 +12,7 @@ import org.scijava.display.event.input.KyEvent;
 import org.scijava.display.event.window.WinClosedEvent;
 import org.scijava.display.event.window.WinClosingEvent;
 import org.scijava.event.EventHandler;
+import org.scijava.event.EventService;
 import org.scijava.input.KeyCode;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -37,14 +38,15 @@ public class MeasureService extends AbstractService implements ImageJService {
     @Parameter
     private UIService uiService;
 
+    @Parameter
+    private EventService eventService;
+
     private boolean measureBatchRunning;
     private File outputFile;
     private List<File> files;
     private int currentFileIndex;
     private List<Double> measurements;
-
-    // pixel per 1mm
-    private int scale;
+    private int scale = 0;
 
     public void setOutputFile(File outputFile) {
         this.outputFile = outputFile;
@@ -52,6 +54,17 @@ public class MeasureService extends AbstractService implements ImageJService {
 
     public void setFiles(List<File> files) {
         this.files = files;
+    }
+
+    /**
+     * Set the scale for the line length
+     * @param scale pixels per 1mm
+     */
+    public void setScale(int scale) {
+        if (scale <= 0) {
+            throw new IllegalArgumentException();
+        }
+        this.scale = scale;
     }
 
     @Override
@@ -68,6 +81,15 @@ public class MeasureService extends AbstractService implements ImageJService {
     @EventHandler
     public void onWindowClosingEvent(final WinClosingEvent evt) {
         this.measure();
+    }
+
+    @EventHandler
+    public void onWindowClosedEvent(final WinClosedEvent evt) {
+        Display<?> display = evt.getDisplay();
+        if (display.toString().equals(this.currentName())) {
+            saveMeasurements();
+            nextImage();
+        }
     }
 
     private void measure() {
@@ -93,16 +115,7 @@ public class MeasureService extends AbstractService implements ImageJService {
         double a = Math.abs(lineStart[0] - lineEnd[0]);
         double b = Math.abs(lineStart[1] - lineEnd[1]);
 
-        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
-    }
-
-    @EventHandler
-    public void onWindowClosedEvent(final WinClosedEvent evt) {
-        Display<?> display = evt.getDisplay();
-        if (display.toString().equals(this.currentName())) {
-            saveMeasurements();
-            nextImage();
-        }
+        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2)) / this.scale;
     }
 
     private void saveMeasurements() {
@@ -111,7 +124,7 @@ public class MeasureService extends AbstractService implements ImageJService {
 
             StringBuilder line = new StringBuilder(this.currentName());
             for (Double measurement : this.measurements) {
-                line.append(",").append(measurement);
+                line.append(",").append(measurement).append("mm");
             }
             line.append("\n");
             writer.write(line.toString());
