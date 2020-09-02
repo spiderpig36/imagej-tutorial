@@ -5,7 +5,6 @@ import net.imagej.ImageJService;
 import net.imagej.display.DataView;
 import net.imagej.display.OverlayView;
 import net.imagej.overlay.LineOverlay;
-import net.imagej.overlay.Overlay;
 import net.imglib2.img.Img;
 import org.scijava.display.Display;
 import org.scijava.display.DisplayService;
@@ -39,10 +38,9 @@ public class MeasureService extends AbstractService implements ImageJService {
     private UIService uiService;
 
     private boolean measureBatchRunning;
-    private List<File> files;
     private File outputFile;
+    private List<File> files;
     private int currentFileIndex;
-
     private List<Double> measurements;
 
     // pixel per 1mm
@@ -52,9 +50,12 @@ public class MeasureService extends AbstractService implements ImageJService {
         this.outputFile = outputFile;
     }
 
+    public void setFiles(List<File> files) {
+        this.files = files;
+    }
+
     @Override
     public void initialize() {
-        this.files = new ArrayList<>();
     }
 
     @EventHandler
@@ -75,15 +76,24 @@ public class MeasureService extends AbstractService implements ImageJService {
             measurements = new ArrayList<>();
             List<DataView> distinctViews = activeDisplay.stream().distinct().collect(Collectors.toList());
             for (DataView v : distinctViews) {
-                if (v instanceof OverlayView) {
-                    OverlayView view = (OverlayView) v;
-                    if (view.getData() instanceof LineOverlay) {
-                        LineOverlay line = (LineOverlay) view.getData();
-                        measurements.add(calculateLineLength(line));
-                    }
+                if (v instanceof OverlayView && v.getData() instanceof LineOverlay) {
+                    LineOverlay line = (LineOverlay) v.getData();
+                    measurements.add(calculateLineLength(line));
                 }
             }
         }
+    }
+
+    private double calculateLineLength(LineOverlay line) {
+        double[] lineStart = new double[2];
+        line.getLineStart(lineStart);
+        double[] lineEnd = new double[2];
+        line.getLineEnd(lineEnd);
+
+        double a = Math.abs(lineStart[0] - lineEnd[0]);
+        double b = Math.abs(lineStart[1] - lineEnd[1]);
+
+        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
     }
 
     @EventHandler
@@ -112,18 +122,6 @@ public class MeasureService extends AbstractService implements ImageJService {
         }
     }
 
-    private double calculateLineLength(LineOverlay line) {
-        double[] lineStart = new double[2];
-        line.getLineStart(lineStart);
-        double[] lineEnd = new double[2];
-        line.getLineEnd(lineEnd);
-
-        double a = Math.abs(lineStart[0] - lineEnd[0]);
-        double b = Math.abs(lineStart[1] - lineEnd[1]);
-
-        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
-    }
-
     public boolean isMeasureBatchRunning() {
         return measureBatchRunning;
     }
@@ -135,11 +133,6 @@ public class MeasureService extends AbstractService implements ImageJService {
 
     public void endMeasureBatch() {
         this.measureBatchRunning = false;
-        this.files = new ArrayList<>();
-    }
-
-    public void addFile(File file) {
-        this.files.add(file);
     }
 
     public File currentFile() {
