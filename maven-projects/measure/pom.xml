@@ -84,14 +84,44 @@
 		<dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>imagej</artifactId>
+<!--			<version>2.0.0-rc-43</version>-->
 		</dependency>
 		<dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>ij</artifactId>
+<!--			<version>1.50e</version>-->
 		</dependency>
         <dependency>
             <groupId>net.imglib2</groupId>
             <artifactId>imglib2-ij</artifactId>
+<!--			<version>2.0.0-beta-31</version>-->
         </dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-legacy</artifactId>
+<!--			<version>0.17.5</version>-->
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-ui-swing</artifactId>
+<!--			<version>0.7.1</version>-->
+			<exclusions>
+				<exclusion>  <!-- declare the exclusion here -->
+					<groupId>com.miglayout</groupId>
+					<artifactId>miglayout</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-ui-awt</artifactId>
+<!--			<version>0.1.4</version>-->
+			<exclusions>
+				<exclusion>  <!-- declare the exclusion here -->
+					<groupId>com.miglayout</groupId>
+					<artifactId>miglayout</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
     </dependencies>
 </project>

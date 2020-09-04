@@ -2,6 +2,7 @@ package tutorials.measure;
 
 import net.imagej.ImageJ;
 
+//import net.imagej.legacy.LegacyService;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -77,8 +78,12 @@ public class MeasureCommand implements Command {
         // Launch ImageJ for test run.
         final ImageJ ij = new ImageJ();
 
+//        ij.context().inject(LegacyService.class);
+
         List<UserInterface> userInterfaces = ij.ui().getAvailableUIs();
         System.out.println(userInterfaces);
+        System.out.println(ij.ui().getDefaultUI());
+        //ij.ui().setDefaultUI(userInterfaces.stream().filter(userInterface -> userInterface.toString().equals("swing")).findAny().orElse(null));
 
         ij.launch(args);
 

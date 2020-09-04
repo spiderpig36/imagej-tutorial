@@ -1,9 +1,14 @@
 package tutorials.measure;
 
+import ij.ImageListener;
+import ij.ImagePlus;
+import ij.gui.Roi;
+import ij.gui.RoiListener;
 import io.scif.services.DatasetIOService;
 import net.imagej.ImageJService;
 import net.imagej.display.DataView;
 import net.imagej.display.OverlayView;
+import net.imagej.legacy.ui.LegacyUI;
 import net.imagej.overlay.LineOverlay;
 import net.imglib2.img.Img;
 import org.scijava.display.Display;
@@ -28,7 +33,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Plugin(type = Service.class)
-public class MeasureService extends AbstractService implements ImageJService {
+public class MeasureService extends AbstractService implements ImageJService, ImageListener, RoiListener {
     @Parameter
     private DatasetIOService ioService;
 
@@ -69,54 +74,81 @@ public class MeasureService extends AbstractService implements ImageJService {
 
     @Override
     public void initialize() {
+        LegacyUI legacyUI = (LegacyUI) uiService.getUI("legacy");
+        ImagePlus.addImageListener(this);
+        Roi.addRoiListener(this);
     }
 
-    @EventHandler
-    public void onKeyEvent(final KyEvent evt) {
-        if (evt.getModifiers().isMetaDown() && evt.getCode() == KeyCode.W) {
-            this.measure();
-        }
+    @Override
+    public void imageOpened(ImagePlus imp) {
+        measurements = new ArrayList<>();
     }
 
-    @EventHandler
-    public void onWindowClosingEvent(final WinClosingEvent evt) {
-        this.measure();
-    }
-
-    @EventHandler
-    public void onWindowClosedEvent(final WinClosedEvent evt) {
-        Display<?> display = evt.getDisplay();
-        if (display.toString().equals(this.currentName())) {
+    @Override
+    public void imageClosed(ImagePlus imp) {
+        if (imp.getTitle().equals(this.currentName())) {
             saveMeasurements();
             nextImage();
         }
     }
 
-    private void measure() {
-        Display<DataView> activeDisplay = (Display<DataView>) displayService.getActiveDisplay();
-        if (activeDisplay.toString().equals(this.currentName())) {
-            measurements = new ArrayList<>();
-            List<DataView> distinctViews = activeDisplay.stream().distinct().collect(Collectors.toList());
-            for (DataView v : distinctViews) {
-                if (v instanceof OverlayView && v.getData() instanceof LineOverlay) {
-                    LineOverlay line = (LineOverlay) v.getData();
-                    measurements.add(calculateLineLength(line));
-                }
-            }
+    @Override
+    public void imageUpdated(ImagePlus imp) {
+    }
+
+    @Override
+    public void roiModified(ImagePlus imp, int id) {
+        if (imp.getTitle().equals(this.currentName())) {
+            measurements.add(imp.getRoi().getLength());
         }
     }
 
-    private double calculateLineLength(LineOverlay line) {
-        double[] lineStart = new double[2];
-        line.getLineStart(lineStart);
-        double[] lineEnd = new double[2];
-        line.getLineEnd(lineEnd);
-
-        double a = Math.abs(lineStart[0] - lineEnd[0]);
-        double b = Math.abs(lineStart[1] - lineEnd[1]);
-
-        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2)) / this.scale;
-    }
+//    @EventHandler
+//    public void onKeyEvent(final KyEvent evt) {
+//        if (evt.getModifiers().isMetaDown() && evt.getCode() == KeyCode.W) {
+//            this.measure(imp.getRoi());
+//        }
+//    }
+//
+//    @EventHandler
+//    public void onWindowClosingEvent(final WinClosingEvent evt) {
+//        this.measure(imp.getRoi());
+//    }
+//
+//    @EventHandler
+//    public void onWindowClosedEvent(final WinClosedEvent evt) {
+//        Display<?> display = evt.getDisplay();
+//        if (display.toString().equals(this.currentName())) {
+//            saveMeasurements();
+//            nextImage();
+//        }
+//    }
+//
+//    private void measure() {
+//        Display<DataView> activeDisplay = (Display<DataView>) displayService.getActiveDisplay();
+//        if (activeDisplay.toString().equals(this.currentName())) {
+//            measurements = new ArrayList<>();
+//            List<DataView> distinctViews = activeDisplay.stream().distinct().collect(Collectors.toList());
+//            for (DataView v : distinctViews) {
+//                if (v instanceof OverlayView && v.getData() instanceof LineOverlay) {
+//                    LineOverlay line = (LineOverlay) v.getData();
+//                    measurements.add(calculateLineLength(line));
+//                }
+//            }
+//        }
+//    }
+//
+//    private double calculateLineLength(LineOverlay line) {
+//        double[] lineStart = new double[2];
+//        line.getLineStart(lineStart);
+//        double[] lineEnd = new double[2];
+//        line.getLineEnd(lineEnd);
+//
+//        double a = Math.abs(lineStart[0] - lineEnd[0]);
+//        double b = Math.abs(lineStart[1] - lineEnd[1]);
+//
+//        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2)) / this.scale;
+//    }
 
     private void saveMeasurements() {
         try {
