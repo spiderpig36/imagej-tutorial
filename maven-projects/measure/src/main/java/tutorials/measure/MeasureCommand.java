@@ -1,5 +1,6 @@
 package tutorials.measure;
 
+import ij.IJ;
 import net.imagej.ImageJ;
 
 //import net.imagej.legacy.LegacyService;

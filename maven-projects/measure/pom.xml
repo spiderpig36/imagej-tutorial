@@ -101,27 +101,5 @@
 			<artifactId>imagej-legacy</artifactId>
 <!--			<version>0.17.5</version>-->
 		</dependency>
-		<dependency>
-			<groupId>org.scijava</groupId>
-			<artifactId>scijava-ui-swing</artifactId>
-<!--			<version>0.7.1</version>-->
-			<exclusions>
-				<exclusion>  <!-- declare the exclusion here -->
-					<groupId>com.miglayout</groupId>
-					<artifactId>miglayout</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.scijava</groupId>
-			<artifactId>scijava-ui-awt</artifactId>
-<!--			<version>0.1.4</version>-->
-			<exclusions>
-				<exclusion>  <!-- declare the exclusion here -->
-					<groupId>com.miglayout</groupId>
-					<artifactId>miglayout</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
     </dependencies>
 </project>

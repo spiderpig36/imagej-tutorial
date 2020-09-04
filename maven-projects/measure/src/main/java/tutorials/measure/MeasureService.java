@@ -4,11 +4,11 @@ import ij.ImageListener;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.gui.RoiListener;
+import ij.io.Opener;
 import io.scif.services.DatasetIOService;
 import net.imagej.ImageJService;
 import net.imagej.display.DataView;
 import net.imagej.display.OverlayView;
-import net.imagej.legacy.ui.LegacyUI;
 import net.imagej.overlay.LineOverlay;
 import net.imglib2.img.Img;
 import org.scijava.display.Display;
@@ -19,6 +19,7 @@ import org.scijava.display.event.window.WinClosingEvent;
 import org.scijava.event.EventHandler;
 import org.scijava.event.EventService;
 import org.scijava.input.KeyCode;
+import org.scijava.io.IOService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 @Plugin(type = Service.class)
 public class MeasureService extends AbstractService implements ImageJService, ImageListener, RoiListener {
     @Parameter
-    private DatasetIOService ioService;
+    private IOService ioService;
 
     @Parameter
     private DisplayService displayService;
@@ -74,14 +75,12 @@ public class MeasureService extends AbstractService implements ImageJService, Im
 
     @Override
     public void initialize() {
-        LegacyUI legacyUI = (LegacyUI) uiService.getUI("legacy");
         ImagePlus.addImageListener(this);
         Roi.addRoiListener(this);
     }
 
     @Override
     public void imageOpened(ImagePlus imp) {
-        measurements = new ArrayList<>();
     }
 
     @Override
@@ -98,57 +97,11 @@ public class MeasureService extends AbstractService implements ImageJService, Im
 
     @Override
     public void roiModified(ImagePlus imp, int id) {
-        if (imp.getTitle().equals(this.currentName())) {
-            measurements.add(imp.getRoi().getLength());
+        if (imp != null && imp.getTitle().equals(this.currentName())) {
+            measurements = new ArrayList<>();
+            measurements.add(imp.getRoi().getLength() / this.scale);
         }
     }
-
-//    @EventHandler
-//    public void onKeyEvent(final KyEvent evt) {
-//        if (evt.getModifiers().isMetaDown() && evt.getCode() == KeyCode.W) {
-//            this.measure(imp.getRoi());
-//        }
-//    }
-//
-//    @EventHandler
-//    public void onWindowClosingEvent(final WinClosingEvent evt) {
-//        this.measure(imp.getRoi());
-//    }
-//
-//    @EventHandler
-//    public void onWindowClosedEvent(final WinClosedEvent evt) {
-//        Display<?> display = evt.getDisplay();
-//        if (display.toString().equals(this.currentName())) {
-//            saveMeasurements();
-//            nextImage();
-//        }
-//    }
-//
-//    private void measure() {
-//        Display<DataView> activeDisplay = (Display<DataView>) displayService.getActiveDisplay();
-//        if (activeDisplay.toString().equals(this.currentName())) {
-//            measurements = new ArrayList<>();
-//            List<DataView> distinctViews = activeDisplay.stream().distinct().collect(Collectors.toList());
-//            for (DataView v : distinctViews) {
-//                if (v instanceof OverlayView && v.getData() instanceof LineOverlay) {
-//                    LineOverlay line = (LineOverlay) v.getData();
-//                    measurements.add(calculateLineLength(line));
-//                }
-//            }
-//        }
-//    }
-//
-//    private double calculateLineLength(LineOverlay line) {
-//        double[] lineStart = new double[2];
-//        line.getLineStart(lineStart);
-//        double[] lineEnd = new double[2];
-//        line.getLineEnd(lineEnd);
-//
-//        double a = Math.abs(lineStart[0] - lineEnd[0]);
-//        double b = Math.abs(lineStart[1] - lineEnd[1]);
-//
-//        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2)) / this.scale;
-//    }
 
     private void saveMeasurements() {
         try {
@@ -197,11 +150,8 @@ public class MeasureService extends AbstractService implements ImageJService, Im
             this.endMeasureBatch();
             return;
         }
-        try {
-            Img currentImg = ioService.open(currentFile().getAbsolutePath());
-            uiService.show(currentImg);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        Opener opener = new Opener();
+        opener.open(currentFile().getAbsolutePath());
     }
 }
