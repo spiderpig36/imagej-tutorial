@@ -3,8 +3,10 @@ package tutorials.measure;
 import ij.ImageListener;
 import ij.ImagePlus;
 import ij.gui.Line;
+import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.RoiListener;
+import ij.io.FileSaver;
 import ij.io.Opener;
 import io.scif.services.DatasetIOService;
 import net.imagej.ImageJService;
@@ -13,6 +15,7 @@ import net.imagej.display.OverlayService;
 import net.imagej.display.OverlayView;
 import net.imagej.overlay.LineOverlay;
 import net.imglib2.img.Img;
+import org.scijava.command.CommandService;
 import org.scijava.display.Display;
 import org.scijava.display.DisplayService;
 import org.scijava.display.event.input.KyEvent;
@@ -41,7 +44,7 @@ public class MeasureService extends AbstractService implements ImageJService, Im
     private IOService ioService;
 
     @Parameter
-    private OverlayService overlayService;
+    private CommandService commandService;
 
     @Parameter
     private UIService uiService;
@@ -93,16 +96,27 @@ public class MeasureService extends AbstractService implements ImageJService, Im
         }
     }
 
-    @Override
     public void imageUpdated(ImagePlus imp) {
     }
 
     @Override
     public void roiModified(ImagePlus imp, int id) {
-        System.out.println(id);
-        if (imp != null && imp.getTitle().equals(this.currentName()) && id == COMPLETED) {
+        if (imp != null && imp.getTitle().equals(this.currentName())) {
             measurements = new ArrayList<>();
-            measurements.add(((Line) imp.getRoi()).getRawLength() / this.scale);
+            if (imp.getOverlay() == null) {
+                imp.setOverlay(new Overlay());
+            }
+            Overlay overlay = imp.getOverlay();
+            if (id == CREATED) {
+                overlay.add(imp.getRoi());
+            }
+            for (Roi roi : overlay) {
+                if (roi instanceof Line) {
+                    if (((Line) roi).getRawLength() > 0) {
+                        measurements.add(((Line) roi).getRawLength() / this.scale);
+                    }
+                }
+            }
         }
     }
 
