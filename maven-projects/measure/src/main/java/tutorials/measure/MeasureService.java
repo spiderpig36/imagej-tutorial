@@ -2,12 +2,14 @@ package tutorials.measure;
 
 import ij.ImageListener;
 import ij.ImagePlus;
+import ij.gui.Line;
 import ij.gui.Roi;
 import ij.gui.RoiListener;
 import ij.io.Opener;
 import io.scif.services.DatasetIOService;
 import net.imagej.ImageJService;
 import net.imagej.display.DataView;
+import net.imagej.display.OverlayService;
 import net.imagej.display.OverlayView;
 import net.imagej.overlay.LineOverlay;
 import net.imglib2.img.Img;
@@ -39,7 +41,7 @@ public class MeasureService extends AbstractService implements ImageJService, Im
     private IOService ioService;
 
     @Parameter
-    private DisplayService displayService;
+    private OverlayService overlayService;
 
     @Parameter
     private UIService uiService;
@@ -97,9 +99,10 @@ public class MeasureService extends AbstractService implements ImageJService, Im
 
     @Override
     public void roiModified(ImagePlus imp, int id) {
-        if (imp != null && imp.getTitle().equals(this.currentName())) {
+        System.out.println(id);
+        if (imp != null && imp.getTitle().equals(this.currentName()) && id == COMPLETED) {
             measurements = new ArrayList<>();
-            measurements.add(imp.getRoi().getLength() / this.scale);
+            measurements.add(((Line) imp.getRoi()).getRawLength() / this.scale);
         }
     }
 
