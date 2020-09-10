@@ -101,5 +101,5 @@
 			<artifactId>imagej-legacy</artifactId>
 <!--			<version>0.17.5</version>-->
 		</dependency>
-    </dependencies>
+	</dependencies>
 </project>

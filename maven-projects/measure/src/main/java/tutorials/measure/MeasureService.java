@@ -2,10 +2,7 @@ package tutorials.measure;
 
 import ij.ImageListener;
 import ij.ImagePlus;
-import ij.gui.Line;
-import ij.gui.Overlay;
-import ij.gui.Roi;
-import ij.gui.RoiListener;
+import ij.gui.*;
 import ij.io.FileSaver;
 import ij.io.Opener;
 import io.scif.services.DatasetIOService;
@@ -15,6 +12,7 @@ import net.imagej.display.OverlayService;
 import net.imagej.display.OverlayView;
 import net.imagej.overlay.LineOverlay;
 import net.imglib2.img.Img;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.scijava.command.CommandService;
 import org.scijava.display.Display;
 import org.scijava.display.DisplayService;
@@ -34,6 +32,7 @@ import org.scijava.ui.UIService;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -86,11 +85,12 @@ public class MeasureService extends AbstractService implements ImageJService, Im
 
     @Override
     public void imageOpened(ImagePlus imp) {
+        ImageWindow imageWindow = imp.getWindow();
     }
 
     @Override
     public void imageClosed(ImagePlus imp) {
-        if (imp.getTitle().equals(this.currentName())) {
+        if (measureBatchRunning && imp.getTitle().equals(this.currentName())) {
             saveMeasurements();
             nextImage();
         }
@@ -101,13 +101,13 @@ public class MeasureService extends AbstractService implements ImageJService, Im
 
     @Override
     public void roiModified(ImagePlus imp, int id) {
-        if (imp != null && imp.getTitle().equals(this.currentName())) {
+        if (measureBatchRunning && imp != null && imp.getTitle().equals(this.currentName())) {
             measurements = new ArrayList<>();
             if (imp.getOverlay() == null) {
                 imp.setOverlay(new Overlay());
             }
             Overlay overlay = imp.getOverlay();
-            if (id == CREATED) {
+            if (id == CREATED && imp.getRoi() instanceof Line) {
                 overlay.add(imp.getRoi());
             }
             for (Roi roi : overlay) {
