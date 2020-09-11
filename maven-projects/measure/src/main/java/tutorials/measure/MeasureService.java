@@ -6,6 +6,7 @@ import ij.gui.Line;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.RoiListener;
+import ij.io.FileSaver;
 import ij.io.Opener;
 import net.imagej.ImageJService;
 import org.scijava.command.CommandService;
@@ -46,6 +47,7 @@ public class MeasureService extends AbstractService implements ImageJService, Im
     private File stateFile;
     private List<File> files;
     private int currentFileIndex;
+    private ImagePlus imageToSave;
 
     public void setFiles(List<File> files) {
         this.files = files;
@@ -69,6 +71,12 @@ public class MeasureService extends AbstractService implements ImageJService, Im
     public void imageClosed(ImagePlus imp) {
         if (measureBatchRunning && imp.getTitle().equals(this.currentName())) {
             updateState();
+
+            if (imageToSave != null) {
+                FileSaver fileSaver = new FileSaver(imageToSave);
+                fileSaver.saveAsTiff(this.currentPath());
+            }
+
             nextImage();
         }
     }
@@ -87,6 +95,7 @@ public class MeasureService extends AbstractService implements ImageJService, Im
             if (id == CREATED && imp.getRoi() instanceof Line) {
                 overlay.add(imp.getRoi());
             }
+            this.imageToSave = (ImagePlus) imp.clone();
         }
     }
 
@@ -124,6 +133,10 @@ public class MeasureService extends AbstractService implements ImageJService, Im
         return this.currentFile().getName();
     }
 
+    public String currentPath() {
+        return currentFile().getAbsolutePath();
+    }
+
     public void nextImage() {
         this.currentFileIndex++;
         if (currentFileIndex > this.files.size() - 1) {
@@ -132,7 +145,9 @@ public class MeasureService extends AbstractService implements ImageJService, Im
             return;
         }
 
+        this.imageToSave = null;
+
         Opener opener = new Opener();
-        opener.open(currentFile().getAbsolutePath());
+        opener.open(this.currentPath());
     }
 }
