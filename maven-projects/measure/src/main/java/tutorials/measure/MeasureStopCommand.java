@@ -13,6 +13,6 @@ public class MeasureStopCommand implements Command {
 
     @Override
     public void run() {
-        measureService.startMeasureBatch();
+        measureService.endMeasureBatch();
     }
 }

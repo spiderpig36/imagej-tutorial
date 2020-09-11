@@ -22,6 +22,9 @@ public class MeasureCommand implements Command {
     @Parameter(label = "Seed", description = "Seed to initialize the random number generator")
     private long seed;
 
+    @Parameter(label = "Restart", description = "Discard list of processed files")
+    private boolean restart;
+
     @Parameter
     private MeasureService measureService;
 
@@ -29,6 +32,10 @@ public class MeasureCommand implements Command {
     public void run() {
         List<String> processedFiles = new ArrayList<>();
         File stateFile = new File(imageFolder.getPath() + "/state.txt");
+
+        if (restart) {
+            stateFile.delete();
+        }
         try {
             if (!stateFile.createNewFile()) {
                 Scanner scanner = new Scanner(stateFile);

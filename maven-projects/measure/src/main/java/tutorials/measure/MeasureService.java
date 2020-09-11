@@ -128,6 +128,7 @@ public class MeasureService extends AbstractService implements ImageJService, Im
         this.currentFileIndex++;
         if (currentFileIndex > this.files.size() - 1) {
             this.endMeasureBatch();
+            this.commandService.run(GenerateTableCommand.class, true);
             return;
         }
 

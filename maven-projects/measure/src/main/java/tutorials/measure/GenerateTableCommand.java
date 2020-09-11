@@ -75,7 +75,7 @@ public class GenerateTableCommand implements Command {
 
         columnNames.sort(String::compareTo);
 
-        String dateString = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        String dateString = new SimpleDateFormat("dd-MM-yyyy_HHmm").format(new Date());
         File outputFile = new File(imageFolder.getPath() + "/measurements_" + dateString + ".csv");
 
         try {
