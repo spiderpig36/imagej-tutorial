@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Plugin(type = Command.class, headless = true,
-        menuPath = "Analyze>Batch Measure")
+        menuPath = "Analyze>Batch Measure>Start Measure")
 public class MeasureCommand implements Command {
 
     @Parameter(style = "directory", label = "Image Folder", description = "Select the folder that contains the images you want to measure")
@@ -23,40 +23,33 @@ public class MeasureCommand implements Command {
     @Parameter(label = "Seed", description = "Seed to initialize the random number generator")
     private long seed;
 
-    @Parameter(label = "Scale", description = "Scale of image in pixels per 1mm", min = "1")
-    private int scale;
-
     @Parameter
     private MeasureService measureService;
-
-    final public static Pattern fileNamePattern = Pattern.compile("([a-z0-9]*)_(\\d{3})x_(\\d*)\\.tif");
 
     @Override
     public void run() {
         List<String> processedFiles = new ArrayList<>();
-        File outputFile = new File(imageFolder.getPath() + "/measurements.csv");
+        File stateFile = new File(imageFolder.getPath() + "/state.txt");
         try {
-            if (!outputFile.createNewFile()) {
-                Scanner scanner = new Scanner(outputFile);
+            if (!stateFile.createNewFile()) {
+                Scanner scanner = new Scanner(stateFile);
 
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
-                    String[] columns = line.split(",");
-                    processedFiles.add(columns[0]);
+                    processedFiles.add(line);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        measureService.setOutputFile(outputFile);
+        measureService.setStateFile(stateFile);
 
-        FilenameFilter tifFilter = (dir, name) -> name.endsWith(".tif");
-        List<File> files = Arrays.asList(Objects.requireNonNull(imageFolder.listFiles(tifFilter)));
+        List<File> files = Arrays.asList(Objects.requireNonNull(imageFolder.listFiles(MeasureService.tifFilter)));
         Collections.shuffle(files, new Random(seed));
         List<File> filesToProcess = files.stream()
                 .filter(file -> !processedFiles.contains(file.getName()))
                 .sorted(Comparator.comparing(file -> {
-                    Matcher matcher = MeasureCommand.fileNamePattern.matcher(file.getName());
+                    Matcher matcher = MeasureService.fileNamePattern.matcher(file.getName());
                     boolean isMatching = matcher.matches();
                     if (isMatching) {
                         return matcher.group(3);
@@ -65,8 +58,6 @@ public class MeasureCommand implements Command {
                 }))
                 .collect(Collectors.toList());
         measureService.setFiles(filesToProcess);
-
-        measureService.setScale(this.scale);
 
         measureService.startMeasureBatch();
         measureService.nextImage();
