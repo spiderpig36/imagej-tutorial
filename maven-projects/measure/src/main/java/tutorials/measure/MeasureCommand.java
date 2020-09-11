@@ -10,7 +10,6 @@ import org.scijava.ui.UserInterface;
 import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Plugin(type = Command.class, headless = true,
